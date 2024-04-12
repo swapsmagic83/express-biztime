@@ -46,9 +46,19 @@ router.put('/:id',async(req,res,next) =>{
     try{
         const { id }= req.params
         const { amt, paid, paid_date }= req.body
+        let paidDate=null
         const result = await db.query(`update invoices set amt=$1, paid=$2 ,paid_date=$3 where id=$4 returning id,comp_code,amt,paid,add_date,paid_date`,[amt,paid,paid_date,id])
         if(result.rows.length == 0){
             throw new ExpressError("Invoice cannot be found",404)
+        }
+        const currPaidDate = result.rows[0].paid_date;
+
+        if (!currPaidDate && paid) {
+          paidDate = new Date();
+        } else if (!paid) {
+          paidDate = null
+        } else {
+          paidDate = currPaidDate;
         }
         return res.json({invoice:result.rows[0]})
     }
@@ -64,6 +74,7 @@ router.delete('/:id',async(req,res,next) =>{
         if(results.rows.length == 0){
             throw new ExpressError("Invoice cannot be found",404)
         }
+        
         return res.send({msg:"Invoice deleted"})
     }
     catch(e){
